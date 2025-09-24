@@ -1,0 +1,15 @@
+{
+  "name": "genie-backend",
+  "version": "1.0.0",
+  "description": "AI-powered task management system",
+  "main": "start_railway.py",
+  "scripts": {
+    "start": "python start_railway.py"
+  },
+  "engines": {
+    "python": "3.9.18"
+  },
+  "keywords": ["python", "flask", "ai", "task-management"],
+  "author": "HKY1011",
+  "license": "MIT"
+}

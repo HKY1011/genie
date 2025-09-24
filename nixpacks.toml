@@ -5,7 +5,7 @@ nixPkgs = ["python39", "gcc"]
 cmds = ["pip install -r requirements.txt"]
 
 [phases.build]
-cmds = ["echo 'Build complete'"]
+cmds = ["echo 'Python build complete - no Docker needed'"]
 
 [start]
 cmd = "python start_railway.py"
