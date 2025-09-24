@@ -5,6 +5,7 @@
 Dockerfile
 docker-compose.yml
 .dockerignore
+*.dockerfile
 
 # Development files
 *.log
