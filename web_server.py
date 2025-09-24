@@ -32,6 +32,13 @@ try:
 except:
     pass  # Railway uses environment variables directly
 
+# Railway fallback - ensure API keys are available
+try:
+    from railway_config import setup_environment
+    setup_environment()
+except:
+    pass
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

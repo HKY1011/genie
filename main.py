@@ -63,6 +63,13 @@ class GenieInteractiveSystem:
         except:
             pass  # Railway uses environment variables directly
         
+        # Railway fallback - ensure API keys are available
+        try:
+            from railway_config import setup_environment
+            setup_environment()
+        except:
+            pass
+        
         # Initialize components (same as test system)
         self._initialize_components()
     
