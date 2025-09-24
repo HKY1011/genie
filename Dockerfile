@@ -21,17 +21,21 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p storage/sessions backups
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV FLASK_APP=web_server.py
 ENV FLASK_ENV=production
 
-# Expose port
+# Expose port (Railway will set PORT dynamically)
 EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run the application (Railway uses dynamic PORT)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --timeout 120 web_server:app"]
+# Run the application using startup script
+CMD ["/app/start.sh"]
