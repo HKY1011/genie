@@ -21,9 +21,8 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p storage/sessions backups
 
-# Copy startup script
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+# Make run.py executable
+RUN chmod +x /app/run.py
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -37,5 +36,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run the application using startup script
-CMD ["/app/start.sh"]
+# Run the application using Python script
+CMD ["python", "run.py"]
