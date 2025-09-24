@@ -58,7 +58,10 @@ class GenieInteractiveSystem:
         self.current_session = None
         
         # Load environment variables
-        load_dotenv()
+        try:
+            load_dotenv()  # For local development
+        except:
+            pass  # Railway uses environment variables directly
         
         # Initialize components (same as test system)
         self._initialize_components()

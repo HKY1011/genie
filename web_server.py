@@ -27,7 +27,10 @@ from storage.json_store import JsonStore
 from models.task_model import Task, TaskStatus
 
 # Load environment variables
-load_dotenv()
+try:
+    load_dotenv()  # For local development
+except:
+    pass  # Railway uses environment variables directly
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
