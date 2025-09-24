@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genie - AI Task Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .loading { border: 2px solid #f3f3f3; border-top: 2px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+    <div class="container mx-auto p-6 max-w-6xl">
+
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">genie</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400">AI-powered task management</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column: Task Input and Current Active Subtask -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Task Input Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Add New Task</h2>
+                    <form id="taskForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Describe what you want to accomplish:</label>
+                            <textarea id="taskInput" rows="3" placeholder="e.g., Learn Python programming and build a web application by next week" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                        </div>
+                        <button type="submit" id="submitTaskBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center">
+                            <span id="submitText">Create Task with AI</span>
+                            <div id="submitLoading" class="loading hidden ml-2"></div>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Current Active Subtask Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Current Active Subtask</h2>
+                    <div id="currentSubtaskDisplay" class="min-h-[200px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 flex items-center justify-center">
+                        <div class="text-center">
+                            <p class="text-gray-500 dark:text-gray-400">No active subtask</p>
+                            <p class="text-gray-400 dark:text-gray-500 text-sm">Create a task to get started</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Section -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Task Feedback</h2>
+                    <form id="feedbackForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">How was this subtask?</label>
+                            <textarea id="feedbackInput" rows="3" placeholder="e.g., This was easier than expected, took about 20 minutes instead of 30" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" onclick="submitFeedback('done')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">✅ Done</button>
+                            <button type="button" onclick="submitFeedback('difficult')" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">😰 Difficult</button>
+                            <button type="button" onclick="submitFeedback('easy')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-all">😊 Easy</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Task List -->
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Task List</h2>
+                <div id="taskList" class="space-y-4">
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">No tasks yet</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        let currentActiveSubtask = null;
+        let tasks = [];
+        let currentTaskId = null;
+
+        // API Functions with enhanced error handling
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`/api${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', ...options.headers },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Create new task with enhanced error handling
+        async function createTask(taskDescription) {
+            try {
+                setLoading(true);
+                const data = await apiRequest('/tasks', {
+                    method: 'POST',
+                    body: JSON.stringify({ task_name: taskDescription })
+                });
+                
+                if (data.success) {
+                    showNotification('Task created successfully with AI planning!', 'success');
+                    await loadTasks();
+                    await loadCurrentSubtask();
+                } else {
+                    throw new Error(data.error || 'Failed to create task');
+                }
+                
+            } catch (error) {
+                showNotification('Failed to create task: ' + error.message, 'error');
+                console.error('Task creation error:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Load all tasks with enhanced error handling
+        async function loadTasks() {
+            try {
+                const data = await apiRequest('/tasks');
+                if (data.success) {
+                    // Sort tasks by creation date (newest first)
+                    tasks = data.tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    renderTaskList();
+                } else {
+                    throw new Error(data.error || 'Failed to load tasks');
+                }
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+                showNotification('Failed to load tasks: ' + error.message, 'error');
+            }
+        }
+
+        // Delete task function
+        async function deleteTask(taskId) {
+            if (!confirm('Are you sure you want to delete this task?')) {
+                return;
+            }
+            
+            try {
+                const data = await apiRequest(`/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (data.success) {
+                    showNotification('Task deleted successfully!', 'success');
+                    await loadTasks();
+                    await loadCurrentSubtask();
+                } else {
+                    throw new Error(data.error || 'Failed to delete task');
+                }
+            } catch (error) {
+                showNotification('Failed to delete task: ' + error.message, 'error');
+                console.error('Task deletion error:', error);
+            }
+        }
+
+        // Load current active subtask with enhanced logic
+        async function loadCurrentSubtask() {
+            try {
+                const data = await apiRequest('/current-subtask');
+                if (data.success) {
+                    currentActiveSubtask = data.subtask;
+                    if (currentActiveSubtask) {
+                        currentTaskId = currentActiveSubtask.task_id;
+                    }
+                    renderCurrentSubtask();
+                } else {
+                    throw new Error(data.error || 'Failed to load current subtask');
+                }
+            } catch (error) {
+                console.error('Failed to load current subtask:', error);
+                // Don't show error notification for this as it's expected when no subtask exists
+            }
+        }
+
+        // Submit feedback with enhanced next subtask handling
+        async function submitFeedback(feedbackType) {
+            if (!currentActiveSubtask) {
+                showNotification('No active subtask to provide feedback for', 'error');
+                return;
+            }
+
+            const feedbackText = document.getElementById('feedbackInput').value.trim();
+            
+            try {
+                const response = await apiRequest('/feedback', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        task_id: currentActiveSubtask.task_id,
+                        chunk_id: currentActiveSubtask.chunk_id,
+                        feedback_type: feedbackType,
+                        feedback_text: feedbackText || `${feedbackType} feedback`,
+                        rating: feedbackType === 'done' ? 5 : feedbackType === 'difficult' ? 3 : 4
+                    })
+                });
+
+                if (response.success) {
+                    showNotification('Feedback submitted successfully!', 'success');
+                    document.getElementById('feedbackInput').value = '';
+                    
+                    // Check if we got a next subtask from the feedback
+                    if (response.next_subtask) {
+                        currentActiveSubtask = response.next_subtask;
+                        renderCurrentSubtask();
+                        showNotification('Next subtask loaded!', 'success');
+                    } else {
+                        // Try to load the next subtask manually
+                        await loadCurrentSubtask();
+                    }
+                    
+                    // Reload tasks to update status
+                    await loadTasks();
+                    
+                } else {
+                    throw new Error(response.error || 'Failed to submit feedback');
+                }
+                
+            } catch (error) {
+                showNotification('Failed to submit feedback: ' + error.message, 'error');
+                console.error('Feedback submission error:', error);
+            }
+        }
+
+        // Render task list with enhanced display
+        function renderTaskList() {
+            const taskList = document.getElementById('taskList');
+            
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-8">No tasks yet</div>';
+                return;
+            }
+
+            taskList.innerHTML = tasks.map(task => `
+                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors relative group">
+                    <button onclick="deleteTask('${task.id}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2 pr-8">${task.name}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">${task.details}</p>
+                    <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        <span class="px-2 py-1 rounded-full ${getStatusColor(task.status)}">${task.status}</span>
+                        <span>${task.time_estimate || 25} min</span>
+                    </div>
+                    ${task.id === currentTaskId ? '<div class="mt-2 text-xs text-indigo-600 dark:text-indigo-400">⭐ Currently Active</div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        // Get status color for task status
+        function getStatusColor(status) {
+            switch (status.toLowerCase()) {
+                case 'done':
+                case 'completed':
+                    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                case 'in_progress':
+                    return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                case 'pending':
+                    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                default:
+                    return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+            }
+        }
+
+        // Render current subtask with enhanced display
+        function renderCurrentSubtask() {
+            const display = document.getElementById('currentSubtaskDisplay');
+            
+            if (!currentActiveSubtask) {
+                display.innerHTML = `
+                    <div class="text-center">
+                        <p class="text-gray-500 dark:text-gray-400">No active subtask</p>
+                        <p class="text-gray-400 dark:text-gray-500 text-sm">Create a task to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            display.innerHTML = `
+                <div class="w-full">
+                    <h3 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">${currentActiveSubtask.chunk_heading}</h3>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">${currentActiveSubtask.chunk_details}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Estimated Time</p>
+                            <p class="text-lg font-semibold">${currentActiveSubtask.estimated_time_minutes} minutes</p>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Resource</p>
+                            <p class="text-lg font-semibold">${currentActiveSubtask.resource?.title || 'None'}</p>
+                        </div>
+                    </div>
+                    
+                    ${currentActiveSubtask.resource?.url ? `
+                        <div class="mb-4">
+                            <a href="${currentActiveSubtask.resource.url}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                🔗 Open Resource
+                            </a>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                        <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                            <strong>Next:</strong> Complete this subtask and provide feedback below
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility functions
+        function setLoading(loading) {
+            const btn = document.getElementById('submitTaskBtn');
+            const text = document.getElementById('submitText');
+            const loadingEl = document.getElementById('submitLoading');
+            
+            if (loading) {
+                btn.disabled = true;
+                text.textContent = 'Processing...';
+                loadingEl.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                text.textContent = 'Create Task with AI';
+                loadingEl.classList.add('hidden');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        // Event listeners
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const taskInput = document.getElementById('taskInput');
+            const taskDescription = taskInput.value.trim();
+            
+            if (taskDescription) {
+                await createTask(taskDescription);
+                taskInput.value = '';
+            } else {
+                showNotification('Please enter a task description', 'error');
+            }
+        });
+
+        // Initialize with enhanced error handling
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Check system health first
+                const healthCheck = await apiRequest('/health');
+                if (!healthCheck.success) {
+                    showNotification('System is not ready. Please try again later.', 'error');
+                    return;
+                }
+                
+                await loadTasks();
+                await loadCurrentSubtask();
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showNotification('Failed to initialize. Please refresh the page.', 'error');
+            }
+        });
+    </script>
+</body>
+</html> 
