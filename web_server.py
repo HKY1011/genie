@@ -827,8 +827,11 @@ if __name__ == '__main__':
         # Initialize the system
         initialize_system()
         
+        # Get port from environment (Railway sets PORT)
+        port = int(os.environ.get('PORT', 5000))
+        
         # Run the Flask app
-        app.run(debug=True, host='0.0.0.0', port=8080)
+        app.run(debug=False, host='0.0.0.0', port=port)
         
     except Exception as e:
         logger.error(f"Failed to start web server: {e}")
