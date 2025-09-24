@@ -1,0 +1,64 @@
+# Railway ignore file
+# Exclude unnecessary files from deployment
+
+# Docker files (not using Docker)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Development files
+*.log
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Credentials
+credentials.json
+token.json
+client_secret_*.json
+
+# Storage and backups
+storage/sessions/
+backups/
+*.json
+!requirements.json
+
+# Test files
+test_*.py
+*_test.py
+debug_*.py
+demo_*.py
+quick_test.py
+direct_test.py
+interactive_*.py
+real_example_test.py
+simple_*.py
+validate_response.py
+health_check.py
+
+# Documentation
+*.md
+!README.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
