@@ -1,45 +1,54 @@
 #!/usr/bin/env python3
 """
-Railway Configuration - Hardcoded API Keys
-This ensures the app works on Railway even if environment variables fail
+Railway Configuration - Environment Variable Helper
+This helps ensure environment variables are properly loaded on Railway
 """
 
 import os
 
-# Hardcoded API keys for Railway deployment
-RAILWAY_API_KEYS = {
-    'GEMINI_API_KEY': 'AIzaSyDjhJnJdnbhVH0njqro60JMBhTZ-DhcJfY',
-    'PERPLEXITY_API_KEY': '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'
-}
-
-def get_api_key(key_name):
+def check_required_env_vars():
     """
-    Get API key with fallback to hardcoded values
+    Check if all required environment variables are set
     """
-    # First try environment variable
-    env_value = os.getenv(key_name)
-    if env_value:
-        return env_value
+    required_vars = [
+        'GEMINI_API_KEY',
+        'PERPLEXITY_API_KEY',
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET'
+    ]
     
-    # Fallback to hardcoded value
-    if key_name in RAILWAY_API_KEYS:
-        return RAILWAY_API_KEYS[key_name]
+    missing_vars = []
+    for var in required_vars:
+        if not os.getenv(var):
+            missing_vars.append(var)
     
-    return None
+    return missing_vars
 
 def setup_environment():
     """
     Set up environment variables for Railway
+    Only sets variables if they're not already set (from Railway dashboard)
     """
-    print("🔧 Setting up Railway environment...")
+    print("🔧 Checking Railway environment variables...")
     
-    for key, value in RAILWAY_API_KEYS.items():
-        if not os.getenv(key):
-            os.environ[key] = value
-            print(f"✅ Set {key} from hardcoded value")
-        else:
-            print(f"✅ {key} already set from environment")
+    missing_vars = check_required_env_vars()
+    
+    if missing_vars:
+        print("❌ Missing required environment variables:")
+        for var in missing_vars:
+            print(f"   - {var}")
+        print("\n📝 Please set these in your Railway dashboard:")
+        print("   1. Go to your Railway project")
+        print("   2. Click on 'Variables' tab")
+        print("   3. Add the missing variables")
+        return False
+    else:
+        print("✅ All required environment variables are set")
+        return True
 
 if __name__ == "__main__":
-    setup_environment()
-    print("\n🎉 Environment setup complete!")
+    success = setup_environment()
+    if success:
+        print("\n🎉 Environment setup complete!")
+    else:
+        print("\n⚠️  Please configure environment variables in Railway dashboard")

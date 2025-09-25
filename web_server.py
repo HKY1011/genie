@@ -32,12 +32,14 @@ try:
 except:
     pass  # Railway uses environment variables directly
 
-# Railway fallback - ensure API keys are available
+# Check Railway environment variables
 try:
     from railway_config import setup_environment
-    setup_environment()
-except:
-    pass
+    env_ok = setup_environment()
+    if not env_ok:
+        logger.warning("⚠️  Some environment variables may be missing. Check Railway dashboard.")
+except Exception as e:
+    logger.warning(f"Could not check environment variables: {e}")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
