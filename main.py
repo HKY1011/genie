@@ -58,19 +58,7 @@ class GenieInteractiveSystem:
         self.current_session = None
         
         # Load environment variables
-        try:
-            load_dotenv()  # For local development
-        except:
-            pass  # Railway uses environment variables directly
-        
-        # Check Railway environment variables
-        try:
-            from railway_config import setup_environment
-            env_ok = setup_environment()
-            if not env_ok:
-                logger.warning("⚠️  Some environment variables may be missing. Check Railway dashboard.")
-        except Exception as e:
-            logger.warning(f"Could not check environment variables: {e}")
+        load_dotenv()
         
         # Initialize components (same as test system)
         self._initialize_components()

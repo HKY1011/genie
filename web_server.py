@@ -27,19 +27,7 @@ from storage.json_store import JsonStore
 from models.task_model import Task, TaskStatus
 
 # Load environment variables
-try:
-    load_dotenv()  # For local development
-except:
-    pass  # Railway uses environment variables directly
-
-# Check Railway environment variables
-try:
-    from railway_config import setup_environment
-    env_ok = setup_environment()
-    if not env_ok:
-        logger.warning("⚠️  Some environment variables may be missing. Check Railway dashboard.")
-except Exception as e:
-    logger.warning(f"Could not check environment variables: {e}")
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -839,11 +827,8 @@ if __name__ == '__main__':
         # Initialize the system
         initialize_system()
         
-        # Get port from environment (Railway sets PORT)
-        port = int(os.environ.get('PORT', 5000))
-        
         # Run the Flask app
-        app.run(debug=False, host='0.0.0.0', port=port)
+        app.run(debug=True, host='0.0.0.0', port=8080)
         
     except Exception as e:
         logger.error(f"Failed to start web server: {e}")

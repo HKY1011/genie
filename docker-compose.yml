@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  genie-backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PERPLEXITY_API_KEY=${PERPLEXITY_API_KEY}
+    volumes:
+      - ./storage:/app/storage
+      - ./backups:/app/backups
+      - ./credentials.json:/app/credentials.json
+      - ./token.json:/app/token.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a reverse proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl  # For SSL certificates
+    depends_on:
+      - genie-backend
+    restart: unless-stopped
+
+  # Optional: Add a database (if you want to upgrade from JSON)
+  # postgres:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_DB: genie_db
+  #     POSTGRES_USER: genie_user
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:
